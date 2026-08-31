@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="率土之滨同盟战报台账：识别战报截图，统计武勋、拆迁、出勤、后勤与赛季贡献。" />
+  <meta name="keywords" content="率土之滨,同盟,战报,武勋,拆迁,赛季考核,统计" />
+  <meta name="robots" content="index,follow" />
+  <meta property="og:title" content="率土同盟战报台账" />
+  <meta property="og:description" content="识别战报截图，快速汇总全盟赛季贡献。" />
+  <meta property="og:type" content="website" />
+  <title>率土同盟战报台账｜战报识别与赛季考核</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">率</span><div><strong>同盟战报台账</strong><small>赛季贡献统计 · 本地保存</small></div></div>
+      <div class="season"><span>当前赛季</span><input id="seasonName" value="征服赛季 · 待命名" aria-label="当前赛季名称" /></div>
+      <div class="header-actions"><button id="exportBtn" class="ghost">导出数据</button><label class="ghost import-label">导入数据<input id="importInput" type="file" accept="application/json" hidden></label></div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div><p class="eyebrow">ALLIANCE OPERATIONS</p><h1>让每一份战报，都成为公平考核的依据。</h1><p>上传截图识别、快速校正、自动计分。战功、攻城、执行与后勤，统一汇总到同一张盟员档案里。</p></div>
+        <div class="hero-actions"><button class="primary" data-view="scan">+ 录入战报</button><button class="secondary" data-view="members">管理盟员</button></div>
+      </section>
+
+      <nav class="tabs" aria-label="功能导航">
+        <button class="active" data-view="dashboard">赛季总览</button>
+        <button data-view="scan">战报识别</button>
+        <button data-view="members">盟员档案</button>
+        <button data-view="records">贡献明细</button>
+        <button data-view="rules">评分规则</button>
+      </nav>
+
+      <section id="dashboard" class="view active">
+        <div class="metric-grid">
+          <article class="metric"><span>已入库盟员</span><strong id="memberCount">0</strong><small>纳入本赛季考核</small></article>
+          <article class="metric accent"><span>累计武勋</span><strong id="totalMerit">0</strong><small>来自已确认战报</small></article>
+          <article class="metric"><span>有效拆迁</span><strong id="totalDemo">0</strong><small>城池与关卡推进</small></article>
+          <article class="metric"><span>平均到场率</span><strong id="avgAttendance">—</strong><small>攻城与关键战</small></article>
+        </div>
+        <div class="grid-two">
+          <section class="panel ranking-panel"><div class="panel-title"><div><p class="eyebrow">RANKING</p><h2>盟员综合贡献榜</h2></div><span class="pill">自动更新</span></div><div id="ranking" class="ranking"></div></section>
+          <section class="panel focus-panel"><div class="panel-title"><div><p class="eyebrow">COMMAND CENTER</p><h2>本周关注</h2></div></div><div id="alerts" class="alerts"></div><div class="score-guide"><div><b>A</b><span>核心战力</span></div><div><b>B</b><span>稳定合格</span></div><div><b>C</b><span>需要跟进</span></div><div><b>D</b><span>观察/休整</span></div></div></section>
+        </div>
+      </section>
+
+      <section id="scan" class="view">
+        <div class="section-heading"><div><p class="eyebrow">BATTLE REPORT OCR</p><h2>识别战报，确认后写入台账</h2><p>识别在你的浏览器内进行。首次使用需联网加载中文识别组件；请务必核对识别结果。</p></div></div>
+        <div class="scan-layout">
+          <section class="panel uploader"><div id="dropZone" class="drop-zone"><input id="imageInput" type="file" accept="image/*" hidden><div class="upload-icon">⌁</div><h3>上传战报截图</h3><p>拖入图片，或点击选择图片</p><button id="chooseImage" class="secondary">选择截图</button></div><img id="preview" class="preview hidden" alt="待识别的战报截图预览" /><div id="ocrStatus" class="ocr-status">尚未选择截图</div></section>
+          <section class="panel extracted"><div class="panel-title"><div><p class="eyebrow">EXTRACTED TEXT</p><h2>识别文字与字段</h2></div><button id="runOcr" class="secondary" disabled>开始识别</button></div><textarea id="ocrText" placeholder="识别后的文字会显示在这里；也可以直接粘贴战报文字。"></textarea><div class="inline-actions"><button id="parseText" class="ghost">从文字提取字段</button><span>无法识别时，直接手动填写下方内容即可。</span></div></section>
+        </div>
+        <section class="panel record-form"><div class="panel-title"><div><p class="eyebrow">VERIFY & SAVE</p><h2>确认贡献记录</h2></div><span class="required">* 必填</span></div><form id="recordForm" class="form-grid">
+          <label>盟员 *<select id="recordMember" required></select></label>
+          <label>记录类型 *<select id="recordType"><option value="combat">战斗战报</option><option value="siege">攻城 / 拆迁</option><option value="key">关键战役</option><option value="logistics">后勤 / 铺路</option></select></label>
+          <label>发生时间<input id="recordDate" type="datetime-local" /></label>
+          <label>战役/城池名称<input id="recordTitle" placeholder="如：虎牢关首攻" /></label>
+          <label>武勋<input id="recordMerit" type="number" min="0" value="0" /></label>
+          <label>杀敌数<input id="recordKills" type="number" min="0" value="0" /></label>
+          <label>战损<input id="recordLosses" type="number" min="0" value="0" /></label>
+          <label>有效拆迁<input id="recordDemo" type="number" min="0" value="0" /></label>
+          <label>驻守/响应（次）<input id="recordGarrison" type="number" min="0" value="0" /></label>
+          <label>铺路/要塞（格/座）<input id="recordSupport" type="number" min="0" value="0" /></label>
+          <label class="wide">备注<input id="recordNotes" placeholder="可填写胜负、指令完成情况或截图识别异常" /></label>
+          <div class="wide form-footer"><span id="saveHint">数据仅保存在本浏览器；请定期导出备份。</span><button class="primary" type="submit">确认并计入统计</button></div>
+        </form></section>
+      </section>
+
+      <section id="members" class="view">
+        <div class="section-heading split"><div><p class="eyebrow">ROSTER</p><h2>盟员档案与考核参数</h2><p>在这里录入基础战力、出勤与纪律信息。战报贡献由系统自动累积。</p></div><button id="addMember" class="primary">+ 新增盟员</button></div>
+        <section id="memberEditor" class="panel hidden"><div class="panel-title"><h2 id="editorTitle">新增盟员</h2><button id="closeEditor" class="icon-btn">×</button></div><form id="memberForm" class="form-grid">
+          <input id="editMemberId" type="hidden" />
+          <label>游戏昵称 *<input id="memberName" required placeholder="如：子龙" /></label><label>所属团<select id="memberGroup"><option>主战团</option><option>拆迁团</option><option>后勤团</option><option>管理组</option><option>预备役</option></select></label>
+          <label>主要职责<select id="memberRole"><option>主战</option><option>拆迁</option><option>驻守</option><option>铺路/后勤</option><option>管理</option></select></label><label>势力值<input id="memberPower" type="number" min="0" value="0" /></label>
+          <label>可用主力队<input id="memberTeams" type="number" min="0" value="0" /></label><label>基础拆迁值<input id="memberBaseDemo" type="number" min="0" value="0" /></label>
+          <label>本周应到次数<input id="memberRequired" type="number" min="0" value="0" /></label><label>本周实到次数<input id="memberAttended" type="number" min="0" value="0" /></label>
+          <label>指令完成率（%）<input id="memberOrders" type="number" min="0" max="100" value="100" /></label><label>纪律状态<select id="memberDiscipline"><option value="0">正常</option><option value="-8">一般提醒（-8）</option><option value="-20">多次违令（-20）</option><option value="-100">取消奖励资格</option></select></label>
+          <label class="wide">管理备注<input id="memberNotes" placeholder="例如：夜战可到、迁城未完成、赛季中途加入" /></label><div class="wide form-footer"><span></span><button class="primary" type="submit">保存盟员档案</button></div>
+        </form></section>
+        <section class="panel table-panel"><div class="table-tools"><input id="memberSearch" placeholder="搜索昵称或团组" /><span id="memberSummary"></span></div><div class="table-wrap"><table><thead><tr><th>盟员</th><th>团组 / 职责</th><th>势力</th><th>武勋</th><th>拆迁</th><th>到场率</th><th>综合分</th><th>评级</th><th></th></tr></thead><tbody id="memberTable"></tbody></table></div></section>
+      </section>
+
+      <section id="records" class="view"><div class="section-heading split"><div><p class="eyebrow">AUDIT TRAIL</p><h2>贡献明细</h2><p>每笔记录均可删除，方便核对错录或重复战报。</p></div><button id="clearFilters" class="ghost">清除筛选</button></div><section class="panel table-panel"><div class="table-tools"><select id="recordFilterMember"><option value="">全部盟员</option></select><select id="recordFilterType"><option value="">全部类型</option><option value="combat">战斗</option><option value="siege">攻城</option><option value="key">关键战</option><option value="logistics">后勤</option></select><span id="recordSummary"></span></div><div class="table-wrap"><table><thead><tr><th>时间</th><th>盟员</th><th>类型</th><th>战役 / 备注</th><th>武勋</th><th>杀敌</th><th>拆迁</th><th>支援</th><th></th></tr></thead><tbody id="recordTable"></tbody></table></div></section></section>
+
+      <section id="rules" class="view"><div class="section-heading"><p class="eyebrow">FAIR SCORING</p><h2>可解释的评分规则</h2><p>分数用于排序和辅助决策，最终奖励应由管理结合关键战表现、盟内职责与赛季实际情况确认。</p></div><div class="rule-grid"><article class="panel rule"><b>35%</b><h3>战争贡献</h3><p>武勋、杀敌、驻守/响应；以全盟最高值归一化，避免绝对数过大难比较。</p></article><article class="panel rule"><b>25%</b><h3>攻城推进</h3><p>有效拆迁为主；关键战役记录额外获得推进加成。</p></article><article class="panel rule"><b>20%</b><h3>出勤与执行</h3><p>实到/应到计入出勤；指令完成率反映迁城、集结和响应情况。</p></article><article class="panel rule"><b>10%</b><h3>发育保障</h3><p>势力值、主力队与拆迁基础能力，按当前盟内上限折算。</p></article><article class="panel rule"><b>10%</b><h3>后勤贡献</h3><p>铺路、要塞和救火支援也有明确价值，不让后勤成员在榜单中失声。</p></article><article class="panel rule danger"><b>扣分项</b><h3>纪律与异常</h3><p>纪律扣分直接作用于总分；重大违令可取消奖励资格。系统不自动判断违规。</p></article></div></section>
+    </main>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
